@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import mysql.connector
+import os
 
 # ================= PAGE CONFIG =================
 st.set_page_config(
@@ -9,17 +9,32 @@ st.set_page_config(
     layout="wide"
 )
 
-# ================= MYSQL CONNECTION =================
-conn = mysql.connector.connect(
-    host="localhost",
-    user="root",
-    password="Harsh@425",   # <-- CHANGE
-    database="ipl"
-)
+# ================= DATA SOURCE SWITCH =================
+USE_LOCAL_DB = os.getenv("USE_LOCAL_DB", "false") == "true"
 
-# ================= LOAD DATA =================
-batting = pd.read_sql("SELECT * FROM batting_stats", conn)
-ball_df = pd.read_sql("SELECT * FROM ball_by_ball", conn)
+if USE_LOCAL_DB:
+    import mysql.connector
+    conn = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="Harsh@425",
+        database="ipl"
+    )
+    batting = pd.read_sql("SELECT * FROM batting_stats", conn)
+    ball_df = pd.read_sql("SELECT * FROM ball_by_ball", conn)
+
+    top10 = pd.read_sql("""
+        SELECT batter, total_runs
+        FROM batting_stats
+        ORDER BY total_runs DESC
+        LIMIT 10
+    """, conn)
+
+else:
+    batting = pd.read_csv("advanced_batting_stats.csv")
+    ball_df = pd.read_csv("ipl_ball_by_ball.csv")
+
+    top10 = batting.sort_values(by="total_runs", ascending=False).head(10)
 
 # ================= FORMAT BEST FIGURES =================
 batting["best_batting_display"] = (
@@ -38,16 +53,9 @@ batting["best_bowling_display"] = (
 st.title("🏏 IPL Player Performance Analytics Dashboard")
 
 # =========================================================
-# TOP 10 RUN SCORERS (NOW SQL OPTIMIZED)
+# TOP 10 RUN SCORERS
 # =========================================================
 st.subheader("Top 10 IPL Run Scorers")
-
-top10 = pd.read_sql("""
-    SELECT batter, total_runs
-    FROM batting_stats
-    ORDER BY total_runs DESC
-    LIMIT 10
-""", conn)
 
 fig1 = px.bar(
     top10,
@@ -61,7 +69,7 @@ fig1 = px.bar(
 st.plotly_chart(fig1, use_container_width=True)
 
 # =========================================================
-# PLAYER SEARCH + METRICS (NO CHANGE IN LOGIC)
+# PLAYER SEARCH + METRICS
 # =========================================================
 st.subheader("Search Player Performance")
 
@@ -78,70 +86,36 @@ st.subheader(f"Performance Metrics: {player_name}")
 
 # ROW 1
 row1 = st.columns(5)
-
-with row1[0]:
-    st.metric("Total Runs", int(player_data["total_runs"]))
-
-with row1[1]:
-    st.metric("Balls Played", int(player_data["balls_played"]))
-
-with row1[2]:
-    st.metric("Innings", int(player_data["innings"]))
-
-with row1[3]:
-    st.metric("Strike Rate", round(player_data["strike_rate"], 2))
-
-with row1[4]:
-    st.metric("Average", round(player_data["average"], 2))
+row1[0].metric("Total Runs", int(player_data["total_runs"]))
+row1[1].metric("Balls Played", int(player_data["balls_played"]))
+row1[2].metric("Innings", int(player_data["innings"]))
+row1[3].metric("Strike Rate", round(player_data["strike_rate"], 2))
+row1[4].metric("Average", round(player_data["average"], 2))
 
 # ROW 2
 row2 = st.columns(5)
-
-with row2[0]:
-    st.metric("50s", int(player_data["total_50s"]))
-
-with row2[1]:
-    st.metric("100s", int(player_data["total_100s"]))
-
-with row2[2]:
-    st.metric("Boundary %", str(round(player_data["boundary_percent"], 2)) + "%")
-
-with row2[3]:
-    st.metric("Dot Ball %", str(round(player_data["dot_ball_percent"], 2)) + "%")
-
-with row2[4]:
-    st.metric("Consistency", round(player_data["consistency_score"], 2))
+row2[0].metric("50s", int(player_data["total_50s"]))
+row2[1].metric("100s", int(player_data["total_100s"]))
+row2[2].metric("Boundary %", str(round(player_data["boundary_percent"], 2)) + "%")
+row2[3].metric("Dot Ball %", str(round(player_data["dot_ball_percent"], 2)) + "%")
+row2[4].metric("Consistency", round(player_data["consistency_score"], 2))
 
 # ROW 3
 row3 = st.columns(5)
-
-with row3[0]:
-    st.metric("Boundary Runs", int(player_data["boundary_runs"]))
-
-with row3[1]:
-    st.metric("Dismissals", int(player_data["dismissals"]))
-
-with row3[2]:
-    st.metric("Wickets", int(player_data["total_wickets"]))
-
-with row3[3]:
-    st.metric("Best Batting", player_data["best_batting_display"])
-
-with row3[4]:
-    st.metric("Best Bowling", player_data["best_bowling_display"])
+row3[0].metric("Boundary Runs", int(player_data["boundary_runs"]))
+row3[1].metric("Dismissals", int(player_data["dismissals"]))
+row3[2].metric("Wickets", int(player_data["total_wickets"]))
+row3[3].metric("Best Batting", player_data["best_batting_display"])
+row3[4].metric("Best Bowling", player_data["best_bowling_display"])
 
 # =========================================================
-# PLAYER PERFORMANCE GRAPH (NO CHANGE)
+# PERFORMANCE GRAPH
 # =========================================================
 st.subheader(f"{player_name} Performance Overview")
 
 performance_df = pd.DataFrame({
     "Metric": [
-        "Strike Rate",
-        "Average",
-        "Boundary %",
-        "Dot Ball %",
-        "Consistency"
+        "Strike Rate", "Average", "Boundary %", "Dot Ball %", "Consistency"
     ],
     "Value": [
         player_data["strike_rate"],
@@ -156,32 +130,20 @@ fig2 = px.line(
     performance_df,
     x="Metric",
     y="Value",
-    markers=True,
-    title=f"{player_name} Performance Analysis"
+    markers=True
 )
 
 st.plotly_chart(fig2, use_container_width=True)
 
 # =========================================================
-# PLAYER COMPARISON (NO CHANGE)
+# PLAYER COMPARISON
 # =========================================================
 st.subheader("Compare Two Players")
 
 c1, c2 = st.columns(2)
 
-with c1:
-    player1 = st.selectbox(
-        "Select First Player",
-        batting["batter"].unique(),
-        key="compare1"
-    )
-
-with c2:
-    player2 = st.selectbox(
-        "Select Second Player",
-        batting["batter"].unique(),
-        key="compare2"
-    )
+player1 = c1.selectbox("Player 1", batting["batter"].unique(), key="p1")
+player2 = c2.selectbox("Player 2", batting["batter"].unique(), key="p2")
 
 p1 = batting[batting["batter"] == player1].iloc[0]
 p2 = batting[batting["batter"] == player2].iloc[0]
@@ -196,7 +158,6 @@ metrics_list = [
 ]
 
 for i in range(0, len(metrics_list), 3):
-
     col1, col2, col3 = st.columns(3)
 
     for j, col in enumerate([col1, col2, col3]):
@@ -208,38 +169,17 @@ for i in range(0, len(metrics_list), 3):
                 "Value": [p1[col_name], p2[col_name]]
             })
 
-            fig = px.bar(
-                compare_df,
-                x="Player",
-                y="Value",
-                color="Player",
-                text_auto=True,
-                title=title
-            )
+            fig = px.bar(compare_df, x="Player", y="Value", color="Player", title=title)
 
-            with col:
-                st.plotly_chart(fig, use_container_width=True)
+            col.plotly_chart(fig, use_container_width=True)
 
 # =========================================================
-# MATCHUP (NO CHANGE)
+# MATCHUP ANALYSIS
 # =========================================================
 st.subheader("Bowler vs Batter Matchup Analysis")
 
-m1, m2 = st.columns(2)
-
-with m1:
-    batter_selected = st.selectbox(
-        "Select Batter",
-        ball_df["batter"].unique(),
-        key="batter_match"
-    )
-
-with m2:
-    bowler_selected = st.selectbox(
-        "Select Bowler",
-        ball_df["bowler"].unique(),
-        key="bowler_match"
-    )
+batter_selected = st.selectbox("Select Batter", ball_df["batter"].unique())
+bowler_selected = st.selectbox("Select Bowler", ball_df["bowler"].unique())
 
 matchup = ball_df[
     (ball_df["batter"] == batter_selected) &
@@ -247,33 +187,26 @@ matchup = ball_df[
 ]
 
 if len(matchup) > 0:
-
     total_runs = matchup["batsman_runs"].sum()
     balls = len(matchup)
     dismissals = matchup["is_wicket"].sum()
-    strike_rate = (total_runs / balls) * 100 if balls > 0 else 0
+    strike_rate = (total_runs / balls) * 100 if balls else 0
 
-    c1, c2, c3, c4 = st.columns(4)
-
-    c1.metric("Runs Scored", int(total_runs))
-    c2.metric("Balls Faced", int(balls))
-    c3.metric("Times Out", int(dismissals))
-    c4.metric("Strike Rate", round(strike_rate, 2))
+    cols = st.columns(4)
+    cols[0].metric("Runs", total_runs)
+    cols[1].metric("Balls", balls)
+    cols[2].metric("Outs", dismissals)
+    cols[3].metric("SR", round(strike_rate, 2))
 
     dismissals_df = matchup[matchup["dismissal_kind"] != ""]
-
     if len(dismissals_df) > 0:
-        counts = dismissals_df["dismissal_kind"].value_counts()
-
         fig = px.pie(
-            names=counts.index,
-            values=counts.values,
-            title="Dismissal Types"
+            names=dismissals_df["dismissal_kind"].value_counts().index,
+            values=dismissals_df["dismissal_kind"].value_counts().values
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig)
 
-        st.subheader("Overall Matchup Analysis")
-
+    # FIXED INDENTATION
     if strike_rate >= 150:
         verdict = "Dominating"
     elif strike_rate >= 120:
@@ -283,18 +216,7 @@ if len(matchup) > 0:
     else:
         verdict = "Bowler Dominating"
 
-    st.success(
-        f"""
-        **Analysis Summary:**  
-        {batter_selected} has scored **{total_runs} runs** off **{balls} balls**
-        against **{bowler_selected}** at a strike rate of **{round(strike_rate,2)}**  
-        and has been dismissed **{dismissals} times**.  
-        Overall matchup verdict: **{verdict}**
-        """
-        )
+    st.success(f"{batter_selected} vs {bowler_selected}: {verdict}")
 
 else:
     st.warning("No matchup data found.")
-
-
-   
