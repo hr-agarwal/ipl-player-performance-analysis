@@ -1,8 +1,20 @@
 # IPL Player Performance Analytics (Data Engineering Project)
 
+🚀 **Live App:** https://hr-agarwal-ipl-player-performance-analysis-app-5jn9xv.streamlit.app/
+
+---
+
 ## Overview
 
-This project builds an end-to-end data engineering pipeline to analyze IPL player performance using ball-by-ball match data. It includes data ingestion, transformation, storage in MySQL, and an interactive dashboard for visualization.
+This project builds an end-to-end data engineering pipeline to analyze IPL player performance using ball-by-ball match data. It includes data ingestion, transformation, storage using CSV files, and an interactive dashboard for visualization.
+
+---
+
+## Demo Preview
+
+![Dashboard Preview](assets/Screenshot 2026-04-18 114654.png)
+assets/Screenshot 2026-04-18 114705.png
+assets/Screenshot 2026-04-18 114724.png
 
 ---
 
@@ -14,7 +26,6 @@ This project builds an end-to-end data engineering pipeline to analyze IPL playe
 * Top 10 run scorers visualization
 * Player vs Player comparison
 * Bowler vs Batter matchup analysis
-* Dismissal type distribution
 * Interactive Streamlit dashboard
 
 ---
@@ -22,7 +33,7 @@ This project builds an end-to-end data engineering pipeline to analyze IPL playe
 ## Tech Stack
 
 * Python (Pandas)
-* MySQL (Database)
+* CSV (Data Storage)
 * Streamlit (Frontend Dashboard)
 * Plotly (Visualization)
 
@@ -32,26 +43,29 @@ This project builds an end-to-end data engineering pipeline to analyze IPL playe
 
 Raw IPL JSON data is processed and transformed into structured format.
 
-JSON → Pandas ETL → CSV → MySQL → Streamlit Dashboard
+```
+JSON → Pandas ETL → CSV → Streamlit Dashboard
+```
 
 ---
 
-## Database Design (Conceptual ER)
+## Data Design (Conceptual)
 
 The system follows a simplified schema:
 
-* batting_stats (aggregated player performance)
-* ball_by_ball (delivery-level data)
+* **batting_stats** (aggregated player performance)
+* **ball_by_ball** (delivery-level data)
 
-Relationship:
+**Relationship:**
 One player → many ball-by-ball records
 
-(Note: In production, player_id would be used instead of player name.)
+(Note: In production systems, a unique `player_id` would be used instead of player names.)
 
 ---
 
 ## Project Structure
 
+```
 cricket_project/
 │
 ├── data/                     # Raw JSON files
@@ -60,6 +74,7 @@ cricket_project/
 ├── 1_data_pipeline.ipynb     # ETL pipeline
 ├── app.py                    # Streamlit dashboard
 └── README.md
+```
 
 ---
 
@@ -67,38 +82,38 @@ cricket_project/
 
 ### 1. Install Dependencies
 
-pip install pandas streamlit plotly mysql-connector-python
+```
+pip install pandas streamlit plotly
+```
 
 ---
 
-### 2. Setup MySQL
-
-CREATE DATABASE ipl;
-
----
-
-### 3. Run Data Pipeline
+### 2. Run Data Pipeline
 
 Run the notebook:
+
+```
 1_data_pipeline.ipynb
+```
 
 This will:
 
 * Process raw data
 * Generate CSV files
-* Insert data into MySQL
 
 ---
 
-### 4. Run Dashboard
+### 3. Run Dashboard
 
+```
 streamlit run app.py
+```
 
 ---
 
 ## Deployment Note
 
-For deployment (Streamlit Cloud), CSV files are used instead of MySQL to avoid external database dependency.
+The project uses CSV files instead of a database to ensure easy deployment on Streamlit Cloud without requiring external database configuration.
 
 ---
 
@@ -113,13 +128,13 @@ For deployment (Streamlit Cloud), CSV files are used instead of MySQL to avoid e
 
 ## Future Improvements
 
-* Add caching for faster queries
-* Normalize database schema (player_id, match_id)
-* Deploy MySQL on cloud (AWS / GCP)
+* Add caching for faster performance
+* Introduce normalized database schema (player_id, match_id)
+* Integrate cloud database (AWS / GCP)
 * Add team-level analytics
 
 ---
 
 ## Author
 
-Harsh Raj Agarwal
+**Harsh Raj Agarwal**
