@@ -13,8 +13,10 @@ This project builds an end-to-end data engineering pipeline to analyze IPL playe
 ## Demo Preview
 
 ![Dashboard Preview](assets/Screenshot 2026-04-18 114654.png)
-assets/Screenshot 2026-04-18 114705.png
-assets/Screenshot 2026-04-18 114724.png
+
+![Dashboard Preview](assets/Screenshot 2026-04-18 114705.png)
+
+![Dashboard Preview](assets/Screenshot 2026-04-18 114724.png)
 
 ---
 
