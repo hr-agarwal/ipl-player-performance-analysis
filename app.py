@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import os
 
 # ================= PAGE CONFIG =================
 st.set_page_config(
@@ -9,32 +8,11 @@ st.set_page_config(
     layout="wide"
 )
 
-# ================= DATA SOURCE SWITCH =================
-USE_LOCAL_DB = os.getenv("USE_LOCAL_DB", "false") == "true"
+# ================= DATA LOADING =================
+batting = pd.read_csv("advanced_batting_stats.csv")
+ball_df = pd.read_csv("ipl_ball_by_ball.csv")
 
-if USE_LOCAL_DB:
-    import mysql.connector
-    conn = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="Harsh@425",
-        database="ipl"
-    )
-    batting = pd.read_sql("SELECT * FROM batting_stats", conn)
-    ball_df = pd.read_sql("SELECT * FROM ball_by_ball", conn)
-
-    top10 = pd.read_sql("""
-        SELECT batter, total_runs
-        FROM batting_stats
-        ORDER BY total_runs DESC
-        LIMIT 10
-    """, conn)
-
-else:
-    batting = pd.read_csv("advanced_batting_stats.csv")
-    ball_df = pd.read_csv("ipl_ball_by_ball.csv")
-
-    top10 = batting.sort_values(by="total_runs", ascending=False).head(10)
+top10 = batting.sort_values(by="total_runs", ascending=False).head(10)
 
 # ================= FORMAT BEST FIGURES =================
 batting["best_batting_display"] = (
@@ -198,15 +176,6 @@ if len(matchup) > 0:
     cols[2].metric("Outs", dismissals)
     cols[3].metric("SR", round(strike_rate, 2))
 
-    dismissals_df = matchup[matchup["dismissal_kind"] != ""]
-    if len(dismissals_df) > 0:
-        fig = px.pie(
-            names=dismissals_df["dismissal_kind"].value_counts().index,
-            values=dismissals_df["dismissal_kind"].value_counts().values
-        )
-        st.plotly_chart(fig)
-
-    # FIXED INDENTATION
     if strike_rate >= 150:
         verdict = "Dominating"
     elif strike_rate >= 120:
